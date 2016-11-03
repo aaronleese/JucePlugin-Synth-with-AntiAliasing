@@ -74,6 +74,17 @@ Array<float> MinBlepGenerator::getMinBlepDerivArray() {
 }
 
 
+void MinBlepGenerator::clear() {
+    
+    jassert(currentActiveBlepOffsets.size() == 0);
+    
+    currentActiveBlepOffsets.clear();
+    
+}
+bool MinBlepGenerator::isClear() {
+    
+    return (currentActiveBlepOffsets.size() > 0);
+}
 
 // MIN BLEP - freq domain calc
 void MinBlepGenerator::buildBlep() {
@@ -172,14 +183,12 @@ void MinBlepGenerator::addBlep(BlepOffset newBlep) {
     currentActiveBlepOffsets.add(newBlep);
     
 }
-
 void MinBlepGenerator::addBlepArray(Array<BlepOffset> newBleps) {
     
     //
     currentActiveBlepOffsets.addArray(newBleps, 0, newBleps.size());
     
 }
-
 Array<MinBlepGenerator::BlepOffset> MinBlepGenerator::getNextBleps() {
     
 
@@ -284,7 +293,7 @@ void MinBlepGenerator::rescale_bleps_to_buffer(float* buffer, int numSamples, fl
                 lastValue = buffer[int(intOffset) - 1];
             
             
-            // 2nd order (velocity)
+            // 1st order (velocity)
             // MUST do this one first - since the 0th order may change the LastValue
             {
                 
@@ -308,7 +317,7 @@ void MinBlepGenerator::rescale_bleps_to_buffer(float* buffer, int numSamples, fl
                 
             }
             
-            // 1st order (position)
+            // 0th order (position)
             {
                 // CALCULATE the magnitude of the 0 order nonlinearity *change in position*
                 float extrapolated_last_pos = lastValue + lastDelta*(fraction);
@@ -371,7 +380,7 @@ void MinBlepGenerator::process_currentBleps(float* buffer, int numSamples) {
             
             // LIMIT the scaling on the derivative array
             // otherwise, it can get TOO large
-            double depthLimited = jlimit<double>(.1, .5, proportionalBlepFreq);
+            double depthLimited = proportionalBlepFreq; //jlimit<double>(.1, 1, proportionalBlepFreq);
             double blepDeriv_PosExact = depthLimited*overSamplingRatio*(exactPosition + p + 1);
             double blepDeriv_Sample = 0;
             double fraction_Deriv = modf(blepDeriv_PosExact, &blepDeriv_Sample);

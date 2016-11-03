@@ -10,7 +10,6 @@
 
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
-
 #include "SinewaveSynth.h"
 
 // OSCOPE :::
@@ -61,7 +60,7 @@ public:
         {
             
             // VIEW OUTPUT
-            const float* current =   myWaveGen->currentOutput.getReadPointer(0);
+            const float* current = myWaveGen->currentOutput.getReadPointer(0);
             int numSamples = myWaveGen->currentOutput.getNumSamples();
             
             bool sign = bool(current[0] > 0);
@@ -237,8 +236,9 @@ WaveGenPluginAudioProcessorEditor::WaveGenPluginAudioProcessorEditor (WaveGenPlu
     waveType->setTextWhenNothingSelected ("- wave type -");
     waveType->addItem("sine", 1);
     waveType->addItem("square", 2);
-    waveType->addItem("saw rise", 3);
-    waveType->addItem("saw fall", 4);
+    waveType->addItem("triangle", 3);
+    waveType->addItem("saw rise", 4);
+    waveType->addItem("saw fall", 5);
     waveType->addListener(this);
     waveType->setSelectedId(2);
     
@@ -251,6 +251,13 @@ WaveGenPluginAudioProcessorEditor::WaveGenPluginAudioProcessorEditor (WaveGenPlu
     pwm->setSliderStyle(Slider::RotaryHorizontalVerticalDrag);
     pwm->addListener(this);
     pwm->setRange(-100, 100);
+    
+    
+    addAndMakeVisible (test = new Slider("test"));
+    test->setSliderStyle (Slider::RotaryHorizontalVerticalDrag);
+    test->addListener(this);
+    test->setRange(0, 10);
+    
     
     addAndMakeVisible (overtoneDepth = new Slider ("overtones"));
     overtoneDepth->setSliderStyle(Slider::RotaryHorizontalVerticalDrag);
@@ -323,6 +330,8 @@ void WaveGenPluginAudioProcessorEditor::resized()
     pwm->setBounds(tone->getRight() + 4, waveType->getBottom() + 20, 80, 30);
     overtoneDepth->setBounds(pwm->getRight() + 4, waveType->getBottom() + 20, 80, 30);
     
+    test->setBounds(overtoneDepth->getRight() + 4, waveType->getBottom() + 20, 80, 30);
+    
     
     float y = gainSlider->getBottom() + 4;
     outputUI->setBounds(4, y, getWidth()-8, getHeight() - y - 78);
@@ -352,8 +361,9 @@ void WaveGenPluginAudioProcessorEditor::comboBoxChanged (ComboBox* comboBoxThatH
         
         if (id == 1) newtype = WaveGenerator::sine;
         else if (id == 2) newtype = WaveGenerator::square;
-        else if (id == 3) newtype = WaveGenerator::sawRise;
-        else if (id == 4) newtype = WaveGenerator::sawFall;
+        else if (id == 3) newtype = WaveGenerator::triangle;
+        else if (id == 4) newtype = WaveGenerator::sawRise;
+        else if (id == 5) newtype = WaveGenerator::sawFall;
         else jassertfalse;
         
         for (int v=0; v < synth->getNumVoices(); v++)
@@ -369,31 +379,6 @@ void WaveGenPluginAudioProcessorEditor::comboBoxChanged (ComboBox* comboBoxThatH
 }
 
 void WaveGenPluginAudioProcessorEditor::sliderValueChanged(Slider* sliderThatWasMoved) {
-    
-    //
-//    if (sliderThatWasMoved == tone)
-//    {
-//        double newTone = tone->getValue();
-//        voiceWaveform->setToneOffset(newTone);
-//    }
-//    else if (sliderThatWasMoved == oscOvertones)
-//    {
-//        double newNumberOfOvertones = oscOvertones->getValue();
-//        mySynth->Parameters[AddictionSynthAP::V1_OVERTONE_DEPTH + selectedVoice]->setParamValue(newNumberOfOvertones);
-//        
-//    }
-//    else if (sliderThatWasMoved == AAFreqSlider)
-//    {
-//        double val = AAFreqSlider->getValue();
-//        //mySynth->setVoiceAAMultiple(selectedVoice, val);
-//        
-//        SubSynthVoice* v = mySynth->getLastVoiceTriggered();
-//        
-//        if (v)
-//        {
-//            v->getWaveGen(0)->setTest(val);
-//        }
-//    }
     
     
     if (sliderThatWasMoved == tone)
@@ -439,6 +424,22 @@ void WaveGenPluginAudioProcessorEditor::sliderValueChanged(Slider* sliderThatWas
             WaveGenerator* waveGen = sineVoice->getWaveGenerator();
             waveGen->setBlepOvertoneDepth(multiple);
         }
+    }
+    else if (sliderThatWasMoved == test)
+    {
+        
+        WaveGenPluginAudioProcessor& waveGenProc = static_cast<WaveGenPluginAudioProcessor&> (processor);
+        Synthesiser* synth =  waveGenProc.getSynth();
+        
+        float testAmp = (float)test->getValue();
+        
+        // Get the synth voice ... it should be a square wave voice ....
+        SineWaveVoice* sineVoice = static_cast<SineWaveVoice*>(synth->getVoice(0));
+        WaveGenerator* waveGen = sineVoice->getWaveGenerator();
+        
+        // test ...
+        waveGen->setTest(testAmp);
+        
     }
     
 }

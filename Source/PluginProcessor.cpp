@@ -104,9 +104,6 @@ void WaveGenPluginAudioProcessor::process (AudioBuffer<FloatType>& buffer,
 {
     const int numSamples = buffer.getNumSamples();
 
-    // apply our gain-change to the incoming data..
-    applyGain (buffer, delayBuffer);
-
     // Now pass any incoming midi messages to our keyboard state object, and let it
     // add messages to the buffer if the user is clicking on the on-screen keys
     keyboardState.processNextMidiBuffer (midiMessages, 0, numSamples, true);
@@ -144,43 +141,6 @@ void WaveGenPluginAudioProcessor::process (AudioBuffer<FloatType>& buffer,
     
 }
 
-template <typename FloatType>
-void WaveGenPluginAudioProcessor::applyGain (AudioBuffer<FloatType>& buffer, AudioBuffer<FloatType>& delayBuffer)
-{
-    ignoreUnused (delayBuffer);
-    const float gainLevel = *gainParam;
-
-    for (int channel = 0; channel < getTotalNumInputChannels(); ++channel)
-        buffer.applyGain (channel, 0, buffer.getNumSamples(), gainLevel);
-}
-
-template <typename FloatType>
-void WaveGenPluginAudioProcessor::applyDelay (AudioBuffer<FloatType>& buffer, AudioBuffer<FloatType>& delayBuffer)
-{
-    const int numSamples = buffer.getNumSamples();
-    const float delayLevel = *delayParam;
-
-    int delayPos = 0;
-
-    for (int channel = 0; channel < getTotalNumInputChannels(); ++channel)
-    {
-        FloatType* const channelData = buffer.getWritePointer (channel);
-        FloatType* const delayData = delayBuffer.getWritePointer (jmin (channel, delayBuffer.getNumChannels() - 1));
-        delayPos = delayPosition;
-
-        for (int i = 0; i < numSamples; ++i)
-        {
-            const FloatType in = channelData[i];
-            channelData[i] += delayData[delayPos];
-            delayData[delayPos] = (delayData[delayPos] + in) * delayLevel;
-
-            if (++delayPos >= delayBuffer.getNumSamples())
-                delayPos = 0;
-        }
-    }
-
-    delayPosition = delayPos;
-}
 
 void WaveGenPluginAudioProcessor::updateCurrentTimeInfoFromHost()
 {

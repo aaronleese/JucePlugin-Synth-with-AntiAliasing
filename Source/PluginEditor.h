@@ -42,9 +42,7 @@ private:
     ScopedPointer<Component> outputUI;
     ScopedPointer<ComboBox> waveType;
     
-    ScopedPointer<Slider> tone;
-    ScopedPointer<Slider> pwm;
-    ScopedPointer<Slider> overtoneDepth;
+    ScopedPointer<Slider> tone, pwm, overtoneDepth, test;
     
     Label PWMLabel, toneLabel, depthLabel;
     

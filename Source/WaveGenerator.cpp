@@ -86,7 +86,6 @@ void WaveGenerator::setBlepOvertoneDepth(double newMult) {
     blepOvertoneDepth = newMult;
     
 }
-
 void WaveGenerator::clear() {
     
     currentAngle = phaseAngleTarget; // + phase !!!
@@ -104,8 +103,10 @@ void WaveGenerator::renderNextBlock (AudioSampleBuffer& outputBuffer, int numSam
  
     if (slaveDeltaBase == 0.0) return;
     
-    if (volume == 0 && gainLast[0] == 0 && gainLast[1] == 0)
+    // FIX !!!!
+    if (volume == 0 && gainLast[0] == 0 && gainLast[1] == 0 && myBlepGenerator.isClear())
         return;
+    
     
     buildWave(numSamples);
     
@@ -160,8 +161,16 @@ void WaveGenerator::renderNextBlock (AudioSampleBuffer& outputBuffer, int numSam
     gainLast[1] = volume*panGain[1];
     
     
-#if JUCE_DEBUG
+    // TEST :::
+    for (int i=0; i < numSamples; i++)
+    {
+        outputBuffer.setSample(1, i, float(i)/float(numSamples));
+    }
+        
     
+    
+#if JUCE_DEBUG
+     
     // Using dB -12 to +3 ... normalized to 0..1 for indicator
     float RMS = outputBuffer.getRMSLevel(0, 0, outputBuffer.getNumSamples());
     
@@ -271,11 +280,14 @@ inline void WaveGenerator::buildWave (int numSamples) {
                     double angle_delta_before_roll = valueAtRoll - valueBeforeRoll; // MODs based on the PITCH BEND ...
                     
                     double change_in_delta = (angle_delta_after_roll - angle_delta_before_roll)*(1/(2*delta));
-                    double depthLimited = jlimit<double>(.1, .5, myBlepGenerator.proportionalBlepFreq);
+                    double depthLimited = myBlepGenerator.proportionalBlepFreq; //jlimit<double>(.1, .5, myBlepGenerator.proportionalBlepFreq);
                     
-                    // 1.3 here was experimentally determined ...
-                    blep.vel_change_magnitude = 1.3*test*change_in_delta*(1/depthLimited);
+                    
+                    // actualCurrentAngleDelta below is added to compensate for higher order nonlinearities
+                    // 66 here was experimentally determined ...
+                    blep.vel_change_magnitude = 66*test*change_in_delta*(1/depthLimited)*actualCurrentAngleDelta;
 
+                    
                     // ADD
                     myBlepGenerator.addBlep(blep);
                 }
@@ -409,10 +421,10 @@ inline void WaveGenerator::buildWave (int numSamples) {
                     blep.pos_change_magnitude = 0;
                     
                     // SCALE the vel magnitude inversely with play speed
-                    double depthLimited = jlimit<double>(.1, .5, myBlepGenerator.proportionalBlepFreq);
+                    double depthLimited = myBlepGenerator.proportionalBlepFreq; //jlimit<double>(.1, .5, myBlepGenerator.proportionalBlepFreq);
                     
                     // Assume nominal delta for all waves ... so ...
-                    blep.vel_change_magnitude = sign*test*130*slope*(1/depthLimited);
+                    blep.vel_change_magnitude = sign*test*121*slope*(1/depthLimited);
                     
                     // ADD
                     myBlepGenerator.addBlep(blep);

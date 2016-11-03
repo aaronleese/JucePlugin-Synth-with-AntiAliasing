@@ -61,6 +61,7 @@ public:
                     SynthesiserSound* /*sound*/,
                     int /*currentPitchWheelPosition*/) override
     {
+        
         currentAngle = 0.0;
         level = velocity * 0.15;
         tailOff = 0.0;
@@ -72,27 +73,16 @@ public:
         
         // PITCH ::::
         myWaveGenerator.setMasterDelta(angleDelta);
+        myWaveGenerator.setVolume(0);
         
     }
 
     void stopNote (float /*velocity*/, bool allowTailOff) override
     {
-        if (allowTailOff)
-        {
-            // start a tail-off by setting this flag. The render callback will pick up on
-            // this and do a fade out, calling clearCurrentNote() when it's finished.
-
-            if (tailOff == 0.0) // we only need to begin a tail-off if it's not already doing so - the
-                                // stopNote method could be called more than once.
-                tailOff = 1.0;
-        }
-        else
-        {
-            // we're being told to stop playing immediately, so reset everything..
-
-            clearCurrentNote();
-            angleDelta = 0.0;
-        }
+        
+        myWaveGenerator.setVolume(-120);
+        
+        clearCurrentNote();
     }
 
     void pitchWheelMoved (int /*newValue*/) override
@@ -109,40 +99,13 @@ public:
     {
         
         
-        if (angleDelta != 0.0)
-        {
-            myWaveGenerator.renderNextBlock(outputBuffer, numSamples);
-            
-            if (tailOff > 0)
-            {
-                while (--numSamples >= 0)
-                {
-                    currentAngle += angleDelta;
-                    ++startSample;
-                    
-                    tailOff *= 0.99;
-                    
-                    if (tailOff <= 0.005)
-                    {
-                        // tells the synth that this voice has stopped
-                        clearCurrentNote();
-                        
-                        angleDelta = 0.0;
-                        break;
-                    }
-                }
-            }
-            else
-            {
-                while (--numSamples >= 0)
-                {
-                    currentAngle += angleDelta;
-                    ++startSample;
-                }
-            }
-        }
+        AudioSampleBuffer nextBuffer(2, numSamples);
+        nextBuffer.clear();
         
+        myWaveGenerator.renderNextBlock(nextBuffer, numSamples);
         
+        outputBuffer.copyFrom(0, startSample, *nextBuffer.getArrayOfReadPointers(), numSamples);
+        outputBuffer.copyFrom(1, startSample, *nextBuffer.getArrayOfReadPointers(), numSamples);
         
     }
 

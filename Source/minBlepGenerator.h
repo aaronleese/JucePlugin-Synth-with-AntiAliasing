@@ -338,6 +338,9 @@ public:
         
     }
     
+    void clear();
+    bool isClear();
+
     
     // CUSTOM ::::
     void setLimitingFreq(float proportionOfSamplingRate);
