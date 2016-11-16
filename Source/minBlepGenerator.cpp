@@ -95,14 +95,13 @@ void MinBlepGenerator::buildBlep() {
     // BUILD the BLEP
     int i, n;
     double r, a, b;
-    double *buffer1, *buffer2;
+    Array <double> buffer1;
+    Array <double> buffer2;
     
     n = (zeroCrossings * 2 * overSamplingRatio) + 1;
     
     DBG("BUILD minBLEP - ratio " + String(overSamplingRatio) + " -> " + String(n));
     
-    buffer1 = new double[n];
-    buffer2 = new double[n];
     
     // Generate Sinc
     const float bandlimit = 0.9f;
@@ -110,16 +109,16 @@ void MinBlepGenerator::buildBlep() {
     b = -a;
     for (i = 0; i < n; i++) {
         r = ((double) i) / ((double) (n - 1));
-        buffer1[i] = SINC(a + (r * (b - a)));
+        buffer1.getRawDataPointer()[i] = SINC(a + (r * (b - a)));
     }
     
     // Window Sinc
-    BlackmanWindow(n, buffer2);
-    FloatVectorOperations::multiply(buffer1, buffer2, n);
+    BlackmanWindow(n, buffer2.getRawDataPointer());
+    FloatVectorOperations::multiply(buffer1.getRawDataPointer(), buffer2.getRawDataPointer(), n);
     
     // Minimum Phase Reconstruction
-    RealCepstrum(n, buffer1, buffer2);
-    MinimumPhase(n, buffer2, buffer1);
+    RealCepstrum(n, buffer1.getRawDataPointer(), buffer2.getRawDataPointer());
+    MinimumPhase(n, buffer2.getRawDataPointer(), buffer1.getRawDataPointer());
     
     // Integrate Into MinBLEP
     minBlepArray.ensureStorageAllocated(n);
@@ -153,7 +152,7 @@ void MinBlepGenerator::buildBlep() {
         // 2ND ORDER ::::
         minBlepDerivArray.getRawDataPointer()[int(ramp)] -= double(ramp)/double(n-1);
     }
-
+    
     
     jassert(fabsf(minBlepDerivArray[0]) < 0.01);
     jassert(fabsf(minBlepDerivArray[n-1]) < 0.01);
@@ -164,13 +163,6 @@ void MinBlepGenerator::buildBlep() {
     FloatVectorOperations::multiply(minBlepArray.getRawDataPointer(), -1.f, minBlepArray.size());
     
     jassert(fabsf(minBlepArray[n]) < 0.001);
-    
-
-    
-    delete buffer1;
-    delete buffer2;
-    
-    
     
 }
 
