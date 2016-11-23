@@ -99,12 +99,6 @@ FFTProcessor::FFTProcessor() : base_a4(440.0) {
     for (int i=0; i<12; i++)
         scale[i] = 1;
     
-    
-    // ADD main buses
-    // TEMP hack - since Jules has set the bus creation to be linked to the preproccessor directive .. hmmm
-    busArrangement.inputBuses.clear();
-    busArrangement.inputBuses.add (AudioProcessorBus ("Input",  AudioChannelSet::canonicalChannelSet (2)));
-    
 
 }
 FFTProcessor::~FFTProcessor() {
